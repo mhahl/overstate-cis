@@ -13,6 +13,13 @@
 ] + ([overstate_cis.selinux_python_pkg] if overstate_cis.selinux_python_pkg else []) %}
 {% set gpg_enforce = salt['pillar.get']('overstate_cis:pkg_gpg_enforce', True) %}
 
+# CIS 0 - Fail closed on unsupported OS (only RedHat/Suse families supported)
+0-guard-supported-os-family:
+  test.fail_without_changes:
+    - name: Unsupported os_family {{ grains['os_family'] }} for overstate_cis (need RedHat or Suse)
+    - unless: test "{{ grains['os_family'] }}" = "RedHat" -o "{{ grains['os_family'] }}" = "Suse"
+    # CIS 0 - Refuse to enforce outside Fedora/openSUSE
+
 # CIS 1.2.x — package manager GPG enforcement (RedHat dnf.conf)
 {% if grains['os_family'] == 'RedHat' %}
 1.2.1-dnf-gpgcheck-enforced:

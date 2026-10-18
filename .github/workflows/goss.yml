@@ -29,7 +29,7 @@ jobs:
           for sls in init packages config services audit selinux bootloader \
                       network logging access accounts maintenance; do
             echo "--- overstate_cis.$sls"
-            sudo "$SALT_CALL" --local state.show_sls "overstate_cis.$sls" --out=quiet
+            sudo "$SALT_CALL" --local state.show_sls "overstate_cis.$sls" --out=json > /dev/null
           done
       - name: Validate pillar.example and goss files parse
         run: |
@@ -74,7 +74,7 @@ jobs:
           docker exec target rm -rf /srv/salt/overstate_cis/.git
 
       - name: Render check in target OS
-        run: docker exec target salt-call --local state.show_sls overstate_cis --out=quiet
+        run: docker exec target salt-call --local state.show_sls overstate_cis --out=json > /dev/null
 
       - name: Audit dry-run
         run: docker exec target salt-call --local state.apply overstate_cis.audit test=True

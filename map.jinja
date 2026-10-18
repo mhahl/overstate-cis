@@ -51,4 +51,6 @@
     'chronyd_svc': 'chronyd',
     'transactional': False,
   },
-}, grain='os_family', merge=salt['pillar.get']('overstate_cis:lookup', {})) %}
+}, grain='os_family', merge=salt['pillar.get']('overstate_cis:lookup', {}), default='RedHat') %}
+{# Unsupported families render with the RedHat map but never apply: packages.sls
+   starts with 0-guard-supported-os-family (test.fail_without_changes). #}
