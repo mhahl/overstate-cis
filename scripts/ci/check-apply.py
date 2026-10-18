@@ -9,6 +9,8 @@ import sys
 # Salt state IDs (the <cis-id>-<slug> IDs from the .sls files) that may
 # fail inside docker containers but pass on real Fedora/openSUSE hosts.
 ALLOWLIST = {
+    "1.6.3-selinux-mode-enforcing",   # needs kernel SELinux (absent in containers;
+                                      # SUSE never renders it: selinux_runtime_managed)
     "4.3.x-auditd-enabled",           # needs audit netlink
     "3.2.x-sysctl-apply",             # host-global keys are read-only in containers
     "1.4.2-grub-mkconfig-bios",       # no grub tooling in containers
