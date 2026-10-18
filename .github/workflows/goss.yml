@@ -47,25 +47,35 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Prep image with systemd, Salt and goss
+        run: |
+          # Base images ship no init binary — install systemd, then commit so the
+          # boot step below has a real PID 1 to exec.
+          CI_IMAGE="cis-ci-$(echo "${{ matrix.image }}" | tr '/:' '--')"
+          echo "CI_IMAGE=$CI_IMAGE" >> "$GITHUB_ENV"
+          docker run -d --name prep "${{ matrix.image }}" sleep infinity
+          if docker exec prep test -x /usr/bin/zypper; then
+            docker exec prep zypper -n in systemd salt-minion curl gzip
+          else
+            docker exec prep dnf -y install systemd salt-minion curl gzip
+          fi
+          docker exec prep sh -c 'curl -fsSL -o /usr/local/bin/goss https://github.com/goss-org/goss/releases/latest/download/goss-linux-amd64 && chmod +x /usr/local/bin/goss'
+          docker commit prep "$CI_IMAGE"
+          docker rm -f prep
+          INIT=$(docker run --rm "$CI_IMAGE" sh -c 'for p in /sbin/init /usr/sbin/init /lib/systemd/systemd /usr/lib/systemd/systemd; do if test -x "$p"; then echo "$p"; break; fi; done')
+          test -n "$INIT" || { echo "no init binary found in $CI_IMAGE"; exit 1; }
+          echo "INIT=$INIT" >> "$GITHUB_ENV"
+
       - name: Boot privileged systemd container
         run: |
           docker run -d --privileged --cgroupns=host \
             -v /sys/fs/cgroup:/sys/fs/cgroup:rw \
-            --name target "${{ matrix.image }}" /sbin/init
+            --name target "$CI_IMAGE" "$INIT"
           for i in $(seq 1 30); do
             docker exec target systemctl is-system-running >/dev/null 2>&1 && break
             sleep 5
           done
           docker exec target systemctl is-system-running || true
-
-      - name: Install Salt and goss
-        run: |
-          if docker exec target test -x /usr/bin/zypper; then
-            docker exec target zypper -n in salt-minion curl gzip
-          else
-            docker exec target dnf -y install salt-minion curl gzip
-          fi
-          docker exec target sh -c 'curl -fsSL -o /usr/local/bin/goss https://github.com/goss-org/goss/releases/latest/download/goss-linux-amd64 && chmod +x /usr/local/bin/goss'
 
       - name: Stage formula at /srv/salt/overstate_cis
         run: |
