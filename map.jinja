@@ -26,11 +26,6 @@
     'rsyslog_svc': 'rsyslog',
     'chronyd_svc': 'chronyd',
     'transactional': False,
-    # Runtime SELinux states (selinux.mode/boolean) need python bindings.
-    # Fedora gets them with salt-minion/policycoreutils; stock SUSE lacks them
-    # (libselinux-bindings lives in security:SELinux, not main repos), so SUSE
-    # manages SELinux via /etc/selinux/config only. Override per-host via
-    # overstate_cis:lookup: {selinux_runtime_managed: True} once bindings exist.
     'selinux_runtime_managed': True,
   },
   'Suse': {
@@ -62,4 +57,9 @@
   },
 }, grain='os_family', merge=salt['pillar.get']('overstate_cis:lookup', {}), default='RedHat') %}
 {# Unsupported families render with the RedHat map but never apply: packages.sls
-   starts with 0-guard-supported-os-family (test.fail_without_changes). #}
+   starts with 0-guard-supported-os-family (test.fail_without_changes).
+   selinux_runtime_managed gates selinux.mode/boolean at render time: True on
+   Fedora (python bindings ship with salt-minion/policycoreutils), False on SUSE
+   (libselinux-bindings lives in security:SELinux, not main repos — SUSE enforces
+   via /etc/selinux/config). Per-host override:
+   overstate_cis:lookup: {selinux_runtime_managed: True}. #}
