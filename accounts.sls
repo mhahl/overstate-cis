@@ -65,10 +65,13 @@
 
 # CIS 5.4.x L2 - Mask Ctrl-Alt-Del reboot target (WARNING: changes console behavior).
 # Double-gated: level 2 AND ctrlaltdel_disable: True.
-{% if salt['pillar.get']('overstate_cis:level', 1) >= 2 %}
+# Use systemctl mask --force: Fedora ships /etc/systemd/system/ctrl-alt-del.target
+# as a symlink to reboot.target, so plain `mask` (what service.masked runs) refuses.
+{% if level >= 2 %}
 5.4.x-L2-mask-ctrlaltdel:
-  service.masked:
-    - name: ctrl-alt-del.target
+  cmd.run:
+    - name: systemctl mask --force ctrl-alt-del.target
+    - unless: systemctl is-enabled ctrl-alt-del.target 2>/dev/null | grep -q masked
     - onlyif: test "{{ salt['pillar.get']('overstate_cis:ctrlaltdel_disable', False) }}" = "True"
     # CIS L2 - Disable Ctrl-Alt-Del reboot (WARNING: changes console behavior)
 {% endif %}
