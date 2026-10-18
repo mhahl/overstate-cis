@@ -27,7 +27,7 @@
     - name: logrotate
     # CIS 4.2.1 - Ensure logrotate is installed
 
-# CIS 4.2.x - journald persistent storage
+# CIS 4.2.x - journald persistent storage (skipped where journald is not installed)
 4.2.x-journald-persistent:
   file.replace:
     - name: /etc/systemd/journald.conf
@@ -35,6 +35,7 @@
     - repl: 'Storage=persistent'
     - append_if_not_found: True
     - backup: minion
+    - onlyif: test -f /etc/systemd/journald.conf
     # CIS 4.2.2 - Ensure journald persistent logging is enabled
 
 # CIS 4.3.x - auditd installed + enabled, ruleset in /etc/audit/rules.d/

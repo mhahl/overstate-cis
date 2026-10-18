@@ -4,6 +4,8 @@
   overstate_cis.audit_pkg,
   overstate_cis.ssh_server_pkg,
   overstate_cis.pwquality_pkg,
+  overstate_cis.shadow_pkg,
+  overstate_cis.postfix_pkg,
   overstate_cis.selinux_core_pkg,
   overstate_cis.selinux_policy_pkg,
   overstate_cis.rsyslog_pkg,
@@ -42,6 +44,7 @@
     - repl: 'gpgcheck = 1'
     - append_if_not_found: True
     - backup: minion
+    - onlyif: test -f {{ overstate_cis.zypp_conf }}
     # CIS 1.2.1 - Ensure gpgcheck is globally activated (zypper)
 {% endif %}
 

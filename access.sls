@@ -31,6 +31,14 @@
     - replace: False
     # CIS 5.1.x - Ensure crontab permissions are 0600
 
+# CIS 5.2.x - host keys must exist before sshd -t can validate the config
+# (fresh installs/containers lack them; real hosts already have them so this skips)
+5.2.x-sshd-hostkeys-present:
+  cmd.run:
+    - name: ssh-keygen -A
+    - creates: /etc/ssh/ssh_host_rsa_key
+    # CIS 5.2.x - Ensure sshd host keys exist for config validation
+
 # CIS 5.2.x - sshd_config full-file template (all CIS options as managed k/v, pillar-overridable)
 5.2.x-sshd-config-managed:
   file.managed:
@@ -41,6 +49,8 @@
     - context:
         overrides: {{ sshd_overrides }}
     - check_cmd: /usr/sbin/sshd -t -f
+    - require:
+      - cmd: 5.2.x-sshd-hostkeys-present
     # CIS 5.2.x - Ensure sshd_config contains full CIS option list (PermitRootLogin no, PasswordAuthentication, X11Forwarding no, etc.)
 
 5.2.x-sshd-service:
@@ -50,7 +60,7 @@
     - watch:
       - file: 5.2.x-sshd-config-managed
 
-# CIS 5.3.x - PAM pwquality (uses libpwquality on both, see map.jinja)
+# CIS 5.3.x - PAM pwquality (Fedora libpwquality, SUSE pam_pwquality, see map.jinja)
 5.3.x-pwquality-conf:
   file.managed:
     - name: /etc/security/pwquality.conf

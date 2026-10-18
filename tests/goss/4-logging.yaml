@@ -28,6 +28,8 @@ file:
     exists: true
     contains:
       - 'Storage=persistent'
+    # Skipped in containers: the state correctly skips where journald is absent.
+    skip: '{{ .Env.SKIP_KERNEL_CHECKS }}'
 command:
   audit-immutable-l2:
     exec: grep -q '^-e 2' /etc/audit/rules.d/cis.rules

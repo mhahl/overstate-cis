@@ -9,6 +9,7 @@
     - repl: 'PASS_MAX_DAYS   {{ salt['pillar.get']('overstate_cis:pass_max_days', 365) }}'
     - append_if_not_found: True
     - backup: minion
+    - onlyif: test -f /etc/login.defs
     # CIS 5.4.1 - Ensure password expiration is 365 days or less
 
 5.4.x-login-defs-min-days:
@@ -18,6 +19,7 @@
     - repl: 'PASS_MIN_DAYS   {{ salt['pillar.get']('overstate_cis:pass_min_days', 1) }}'
     - append_if_not_found: True
     - backup: minion
+    - onlyif: test -f /etc/login.defs
     # CIS 5.4.1 - Ensure minimum password age is configured
 
 5.4.x-login-defs-warn-age:
@@ -27,6 +29,7 @@
     - repl: 'PASS_WARN_AGE   {{ salt['pillar.get']('overstate_cis:pass_warn_age', 7) }}'
     - append_if_not_found: True
     - backup: minion
+    - onlyif: test -f /etc/login.defs
     # CIS 5.4.1 - Ensure password warning age is configured
 
 # CIS 5.3.x - faillock lockout policy (common-auth)

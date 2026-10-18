@@ -86,16 +86,26 @@ Goss L2 flags are environment, not pillar: `ENABLE_L2=1`.
 
 - **Fedora:** native SELinux enforcing/targeted. Packages
   `policycoreutils`, `policycoreutils-python-utils`,
-  `selinux-policy-targeted`, `openssh-server`, `audit`. GPG via
+  `selinux-policy-targeted`, `openssh-server`, `audit`, `shadow-utils`,
+  `postfix` (installed to enforce local-only MTA config). GPG via
   `/etc/dnf/dnf.conf` `gpgcheck=1`. Grub EFI path
   `/boot/efi/EFI/fedora/grub.cfg`.
 - **openSUSE Tumbleweed / Leap 16:** SELinux enforcing/targeted is the
   default for new installs since the Feb 2025 snapshots; legacy hosts
   keep AppArmor until migrated. Packages `policycoreutils`,
   `selinux-policy-targeted`, `openssh` (server+client in one),
-  `audit`. No Fedora-equivalent `policycoreutils-python-utils` split —
+  `pam_pwquality` (provides the PAM module; the library itself is the
+  versioned `libpwquality1`), `shadow`, `audit`. No Fedora-equivalent
+  `policycoreutils-python-utils` split —
   tooling ships inside Suse packaging; the formula does not install the
-  Fedora split name on Suse. GPG via `/etc/zypp/zypp.conf`.
+  Fedora split name on Suse. Python SELinux bindings
+  (`libselinux-bindings`) live in the `security:SELinux` devel repo,
+  not main repos, so `selinux.mode`/`selinux.boolean` runtime states are
+  compiled out on Suse (`selinux_runtime_managed: False` in
+  `map.jinja`) and enforcement rides on `/etc/selinux/config`
+  (effective at boot). Set
+  `overstate_cis:lookup: {selinux_runtime_managed: True}` per-host once
+  bindings exist. GPG via `/etc/zypp/zypp.conf`.
   Bootloader `grub2-mkconfig -o /boot/grub2/grub.cfg` for BIOS and EFI.
 - **Transactional systems:** `bootloader.sls` detects
   `transactional-update` and wraps `grub2-mkconfig` in

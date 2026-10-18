@@ -5,6 +5,8 @@
     'audit_pkg': 'audit',
     'ssh_server_pkg': 'openssh-server',
     'pwquality_pkg': 'libpwquality',
+    'shadow_pkg': 'shadow-utils',
+    'postfix_pkg': 'postfix',
     'selinux_core_pkg': 'policycoreutils',
     'selinux_python_pkg': 'policycoreutils-python-utils',
     'selinux_policy_pkg': 'selinux-policy-targeted',
@@ -14,7 +16,6 @@
     'nftables_pkg': 'nftables',
     'libpam_pkg': 'pam',
     'sudo_pkg': 'sudo',
-    'postfix_pkg': 'postfix',
     'grub_default_file': '/etc/default/grub',
     'grub_mkconfig_bios': 'grub2-mkconfig -o /boot/grub2/grub.cfg',
     'grub_mkconfig_efi': 'grub2-mkconfig -o /boot/efi/EFI/fedora/grub.cfg',
@@ -25,11 +26,18 @@
     'rsyslog_svc': 'rsyslog',
     'chronyd_svc': 'chronyd',
     'transactional': False,
+    # Runtime SELinux states (selinux.mode/boolean) need python bindings.
+    # Fedora gets them with salt-minion/policycoreutils; stock SUSE lacks them
+    # (libselinux-bindings lives in security:SELinux, not main repos), so SUSE
+    # manages SELinux via /etc/selinux/config only. Override per-host via
+    # overstate_cis:lookup: {selinux_runtime_managed: True} once bindings exist.
+    'selinux_runtime_managed': True,
   },
   'Suse': {
     'audit_pkg': 'audit',
     'ssh_server_pkg': 'openssh',
-    'pwquality_pkg': 'libpwquality',
+    'pwquality_pkg': 'pam_pwquality',
+    'shadow_pkg': 'shadow',
     'selinux_core_pkg': 'policycoreutils',
     'selinux_python_pkg': '',
     'selinux_policy_pkg': 'selinux-policy-targeted',
@@ -50,6 +58,7 @@
     'rsyslog_svc': 'rsyslog',
     'chronyd_svc': 'chronyd',
     'transactional': False,
+    'selinux_runtime_managed': False,
   },
 }, grain='os_family', merge=salt['pillar.get']('overstate_cis:lookup', {}), default='RedHat') %}
 {# Unsupported families render with the RedHat map but never apply: packages.sls

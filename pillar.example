@@ -47,5 +47,7 @@ overstate_cis:
 
   # OS-specific overrides (merged in map.jinja). Rarely needed.
   lookup: {}
+    # selinux_runtime_managed: True  # SUSE hosts WITH python SELinux bindings
+    #   (libselinux-bindings from security:SELinux) to enable selinux.mode/boolean
 
 # Goss test flags (env, not pillar): ENABLE_L2=1 enforces L2 goss skips.

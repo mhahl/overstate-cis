@@ -25,7 +25,13 @@
     - append_if_not_found: True
     - backup: minion
 
-# CIS 1.6.3 - Ensure SELinux enforcing via state module (requires reboot if changing)
+# CIS 1.6.3 - Runtime SELinux management (state module). Gated by
+# selinux_runtime_managed in map.jinja: onlyif/unless cannot help here because
+# Salt fails state resolution ("was not found... __virtual__ returned False") at
+# compile time when python bindings are absent, before requisites are evaluated.
+# SUSE therefore enforces via /etc/selinux/config (effective at boot); set
+# overstate_cis:lookup: {selinux_runtime_managed: True} once bindings exist.
+{% if overstate_cis.selinux_runtime_managed %}
 1.6.3-selinux-mode-enforcing:
   selinux.mode:
     - name: enforcing
@@ -39,3 +45,4 @@
     - persist: True
     # CIS 1.6.x - Ensure SELinux boolean {{ bname }} is {{ bval }}
 {% endfor %}
+{% endif %}
