@@ -1,0 +1,29 @@
+# CIS 5.2.x sshd_config — full CIS option list as managed k/v. CIS DIL v2.0.0.
+# Pillar overrides: overstate_cis:sshd_options: { PermitRootLogin: no, ... }
+{% set defaults = {
+  'Port': 22,
+  'Protocol': 2,
+  'LogLevel': 'VERBOSE',
+  'X11Forwarding': 'no',
+  'MaxAuthTries': 4,
+  'IgnoreRhosts': 'yes',
+  'HostbasedAuthentication': 'no',
+  'PermitRootLogin': 'no',
+  'PermitEmptyPasswords': 'no',
+  'PasswordAuthentication': 'no',
+  'ChallengeResponseAuthentication': 'no',
+  'UsePAM': 'yes',
+  'AllowTcpForwarding': 'no',
+  'ClientAliveInterval': 300,
+  'ClientAliveCountMax': 3,
+  'LoginGraceTime': 60,
+  'Banner': '/etc/issue.net',
+  'MaxStartups': '10:30:60',
+  'MaxSessions': 10,
+  'PermitUserEnvironment': 'no',
+} %}
+{% set opts = dict(defaults, **overrides|default({})) %}
+# Managed by Salt overstate_cis — CIS DIL v2.0.0. Manual edits will be overwritten.
+{% for k, v in opts.items() %}
+{{ k }} {{ v }}
+{% endfor %}

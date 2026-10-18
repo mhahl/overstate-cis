@@ -1,0 +1,22 @@
+# CIS 4.3.x audit rules — /etc/audit/rules.d/cis.rules. CIS DIL v2.0.0.
+# Managed by Salt overstate_cis. Reload via augenrules --load.
+-D
+-b 8192
+-f 1
+--backlog_wait_time 60000
+# time-change
+-a always,exit -F arch=b64 -S adjtimex -S settimeofday -k time-change
+-a always,exit -F arch=b32 -S adjtimex -S settimeofday -S stime -k time-change
+-w /etc/localtime -p wa -k time-change
+# identity
+-w /etc/group -p wa -k identity
+-w /etc/passwd -p wa -k identity
+-w /etc/gshadow -p wa -k identity
+-w /etc/shadow -p wa -k identity
+# DAC / mounts / modules
+-a always,exit -F arch=b64 -S chmod -S fchmod -S fchmodat -k perm_mod
+-a always,exit -F arch=b64 -S mount -k mounts
+-w /sbin/insmod -p x -k modules
+-w /sbin/rmmod -p x -k modules
+-w /sbin/modprobe -p x -k modules
+# NOTE: `-e 2` immutable is L2 opt-in only (needs reboot). See logging.sls commented block.

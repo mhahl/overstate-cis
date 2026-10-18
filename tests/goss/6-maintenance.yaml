@@ -1,0 +1,15 @@
+file:
+  /etc/passwd:
+    exists: true
+    mode: "0644"
+  /etc/shadow:
+    exists: true
+    mode: "0000"
+  /etc/group:
+    exists: true
+    mode: "0644"
+command:
+  usb-blacklist-l2:
+    exec: grep -q 'install usb-storage /bin/true' /etc/modprobe.d/cis-usb-storage.conf
+    exit-status: 0
+    skip: '{{ .Env.ENABLE_L2 | default "true" | eq "1" | ternary "false" "true" }}'

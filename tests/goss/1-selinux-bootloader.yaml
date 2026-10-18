@@ -1,0 +1,24 @@
+file:
+  /etc/selinux/config:
+    exists: true
+    contains:
+      - 'SELINUX=enforcing'
+      - 'SELINUXTYPE=targeted'
+  /etc/default/grub:
+    exists: true
+    contains:
+      - 'security=selinux'
+      - 'selinux=1'
+      - 'enforcing=1'
+    skip: false
+command:
+  check-selinux-enforcing:
+    exec: getenforce || sestatus
+    exit-status: 0
+    stdout:
+      - enforcing
+    skip: false
+  no-apparmor-param:
+    exec: sh -c "! grep -q security=apparmor /etc/default/grub"
+    exit-status: 0
+    skip: false

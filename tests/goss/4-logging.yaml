@@ -1,0 +1,30 @@
+package:
+  rsyslog:
+    installed: true
+    skip: false
+  audit:
+    installed: true
+    skip: false
+service:
+  rsyslog:
+    enabled: true
+    running: true
+    skip: false
+  auditd:
+    enabled: true
+    running: true
+    skip: false
+file:
+  /etc/audit/rules.d/cis.rules:
+    exists: true
+    contains:
+      - '-w /etc/shadow -p wa -k identity'
+  /etc/systemd/journald.conf:
+    exists: true
+    contains:
+      - 'Storage=persistent'
+command:
+  audit-immutable-l2:
+    exec: grep -q '^-e 2' /etc/audit/rules.d/cis.rules
+    exit-status: 0
+    skip: '{{ .Env.ENABLE_L2 | default "true" | eq "1" | ternary "false" "true" }}'

@@ -1,0 +1,4 @@
+# CIS 4.1.x rsyslog — CIS DIL v2.0.0.
+# Managed by Salt overstate_cis.
+$FileCreateMode 0640
+*.* @@{{ salt['pillar.get']('overstate_cis:log_server', '@localhost') }}

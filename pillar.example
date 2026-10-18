@@ -1,0 +1,51 @@
+# pillar.example — overstate_cis tunables. CIS DIL v2.0.0. Salt 3008.
+overstate_cis:
+  # Enforcement master switch. False = audit-only (default, safe).
+  enforce: False
+  # CIS level: 1 skips L2 controls entirely; 2 enables L2 blocks (each still needs per-flag opt-in).
+  level: 1
+
+  # SELinux booleans, e.g. { httpd_can_network_connect: 'on' }. Applied with persist=True.
+  selinux_booleans: {}
+
+  # Legacy AppArmor→SELinux migration. Default False (skipped). Set True ONLY for
+  # pre-Feb-2025 / Leap 15.x imports. Masks apparmor, strips kernel params,
+  # touches /.autorelabel, requires MANUAL reboot. Both LSMs simultaneously unsupported.
+  legacy_apparmor_migration: False
+
+  # sshd_config full CIS k/v overrides (merged over secure defaults in template).
+  sshd_options: {}
+    # PermitRootLogin: no
+    # PasswordAuthentication: no
+
+  # Extra sysctl keys merged over CIS base (see network.sls sysctl_base).
+  sysctl: {}
+  disable_ipv6: False        # WARNING: breaks Docker/k8s if True
+  disable_wireless: True     # False on WiFi laptops
+  firewalld_default_zone: public
+
+  # Password / session policy
+  pass_max_days: 365
+  pass_min_days: 1
+  pass_warn_age: 7
+  pw_minlen: 14
+  faillock_deny: 5
+  faillock_unlock_time: 900
+  tmout: 600
+  tmout_enable: False        # L2 opt-in (kills idle shells)
+  umask_restrictive: False   # L2 opt-in 027 (breaks GUI/Docker builds)
+  usb_disable: False         # L2 opt-in (breaks installers/VMs)
+  audit_immutable: False     # L2 opt-in -e 2 (needs reboot to change)
+  audit_max_log_file_mb: 50
+  audit_ww_files: True       # audit.sls world-writable scan toggle
+
+  # Services to mask (CIS 2.x). Extend via pillar, never AppArmor here.
+  mask_services: ['xinetd', 'avahi-daemon', 'cups', 'dhcpd', 'slpd']
+
+  # Remote log server (rsyslog template). Default local.
+  log_server: '@localhost'
+
+  # OS-specific overrides (merged in map.jinja). Rarely needed.
+  lookup: {}
+
+# Goss test flags (env, not pillar): ENABLE_L2=1 enforces L2 goss skips.

@@ -1,0 +1,22 @@
+file:
+  /etc/sysctl.d/99-cis.conf:
+    exists: true
+    contains:
+      - 'net.ipv4.tcp_syncookies = 1'
+      - 'net.ipv4.conf.all.log_martians = 1'
+      - 'net.ipv4.conf.all.rp_filter = 1'
+  /etc/firewalld/firewalld.conf:
+    exists: true
+    contains:
+      - 'FirewallBackend=nftables'
+command:
+  firewalld-default-zone:
+    exec: firewall-cmd --get-default-zone
+    exit-status: 0
+    stdout:
+      - public
+    skip: false
+  l2-drop-zone:
+    exec: firewall-cmd --get-default-zone | grep -q drop
+    exit-status: 0
+    skip: '{{ .Env.ENABLE_L2 | default "true" | eq "1" | ternary "false" "true" }}'

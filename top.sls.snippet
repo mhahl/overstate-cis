@@ -1,0 +1,9 @@
+# top.sls snippet — single entrypoint, orphan-state avoidance.
+# Copy into your salt top.sls. Never target sub-SLS directly; always apply overstate_cis.
+base:
+  '*':
+    - overstate_cis
+# Orphan avoidance: init.sls is the ONLY entrypoint.
+# config.sls / selinux.sls / etc. are included via init→config, never applied standalone.
+# legacy_migration.sls is manual-only:
+#   salt-call --local state.apply overstate_cis.legacy_migration pillar='{"overstate_cis": {"legacy_apparmor_migration": True}}'

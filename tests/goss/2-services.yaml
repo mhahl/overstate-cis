@@ -1,0 +1,19 @@
+service:
+  xinetd:
+    enabled: false
+    running: false
+    skip: false
+  avahi-daemon:
+    enabled: false
+    running: false
+    skip: false
+  cups:
+    enabled: false
+    running: false
+    skip: false
+file:
+  /etc/postfix/main.cf:
+    exists: true
+    contains:
+      - 'inet_interfaces = localhost'
+    skip: false

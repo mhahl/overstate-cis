@@ -1,0 +1,7 @@
+# CIS 5.3.x faillock — CIS DIL v2.0.0.
+dir = /var/run/faillock
+audit = yes
+silent = no
+deny = {{ salt['pillar.get']('overstate_cis:faillock_deny', 5) }}
+unlock_time = {{ salt['pillar.get']('overstate_cis:faillock_unlock_time', 900) }}
+even_deny_root

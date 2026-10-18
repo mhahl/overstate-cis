@@ -1,0 +1,5 @@
+# CIS 3.2.x sysctl — checksum-backed. CIS DIL v2.0.0.
+# Managed by Salt overstate_cis.
+{% for k, v in params.items() %}
+{{ k }} = {{ v }}
+{% endfor %}

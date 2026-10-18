@@ -1,0 +1,29 @@
+{# MACROS.JINJA — reusable Jinja for CIS DIL v2.0.0. Salt 3008. #}
+
+{# sysctl key/value block renderer #}
+{% macro sysctl_block(params) %}
+{% for k, v in params.items() -%}
+{{ k }} = {{ v }}
+{% endfor %}
+{%- endmacro %}
+
+{# sshd option line renderer — handles yes/no, lists, strings #}
+{% macro sshd_option(key, value) -%}
+{% if value is sameas true %}{{ key }} yes
+{% elif value is sameas false %}{{ key }} no
+{% elif value is iterable and value is not string %}{{ key }} {{ value | join(',') }}
+{% else %}{{ key }} {{ value }}
+{% endif %}
+{%- endmacro %}
+
+{# SELinux boolean loop helper — documents expected pillar shape:
+   overstate_cis:selinux_booleans: { httpd_can_network_connect: 'on' } #}
+{% macro selinux_boolean_states(booleans) %}
+{% for name, val in booleans.items() %}
+{{ 'selinux-boolean-' ~ name }}:
+  selinux.boolean:
+    - name: {{ name }}
+    - value: {{ val }}
+    - persist: True
+{% endfor %}
+{%- endmacro %}
