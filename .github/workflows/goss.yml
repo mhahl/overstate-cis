@@ -21,12 +21,15 @@ jobs:
       - run: pip install "salt>=3008,<3009" pyyaml
       - name: Render every SLS
         run: |
+          # salt-call lives in the setup-python venv, which sudo's secure_path
+          # cannot see — resolve it to an absolute path first.
+          SALT_CALL="$(dirname "$(command -v python)")/salt-call"
           sudo mkdir -p /srv/salt
           sudo cp -r "$GITHUB_WORKSPACE" /srv/salt/overstate_cis
           for sls in init packages config services audit selinux bootloader \
                       network logging access accounts maintenance; do
             echo "--- overstate_cis.$sls"
-            sudo salt-call --local state.show_sls "overstate_cis.$sls" --out=quiet
+            sudo "$SALT_CALL" --local state.show_sls "overstate_cis.$sls" --out=quiet
           done
       - name: Validate pillar.example and goss files parse
         run: |
