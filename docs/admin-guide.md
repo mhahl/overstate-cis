@@ -67,10 +67,12 @@ Overstate UI paths are in the [Overstate guide](overstate-guide.md).
 | `disable_ipv6` | `False` | True disables IPv6. Breaks Docker/k8s. |
 | `disable_wireless` | `True` | Set False on WiFi laptops (masks `wpa_supplicant`). |
 | `firewalld_default_zone` | `public` | Set via `firewall-cmd --set-default-zone`. |
+| `firewalld_strict_drop` | `False` | L2 opt-in: default zone `drop` (breaks Docker/k8s). |
 | `pass_max_days/min_days/warn_age` | `365/1/7` | `login.defs` aging. |
 | `pw_minlen` | `14` | `pwquality.conf` minimum length. |
 | `faillock_deny/unlock_time` | `5/900` | `faillock.conf` lockout. |
 | `tmout/tmout_enable` | `600/False` | L2 opt-in session timeout. |
+| `ctrlaltdel_disable` | `False` | L2 opt-in (masks `ctrl-alt-del.target`). |
 | `umask_restrictive` | `False` | L2 opt-in `umask 027` in `/etc/profile`. |
 | `usb_disable` | `False` | L2 opt-in `usb-storage` blacklist. |
 | `audit_immutable` | `False` | L2 opt-in `-e 2` (needs reboot to change). |

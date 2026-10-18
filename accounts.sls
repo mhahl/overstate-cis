@@ -63,8 +63,12 @@
     - replace: False
     # CIS 5.4.x - Ensure root login is restricted to system console
 
-# WARNING L2: disable Ctrl-Alt-Del (mask) — commented by default, breaks physical consoles if unexpected
-# 5.4.x-L2-mask-ctrlaltdel:
-#   service.masked:
-#     - name: ctrl-alt-del.target
-#     # CIS L2 - Disable Ctrl-Alt-Del reboot (WARNING: changes console behavior)
+# CIS 5.4.x L2 - Mask Ctrl-Alt-Del reboot target (WARNING: changes console behavior).
+# Double-gated: level 2 AND ctrlaltdel_disable: True.
+{% if salt['pillar.get']('overstate_cis:level', 1) >= 2 %}
+5.4.x-L2-mask-ctrlaltdel:
+  service.masked:
+    - name: ctrl-alt-del.target
+    - onlyif: test "{{ salt['pillar.get']('overstate_cis:ctrlaltdel_disable', False) }}" = "True"
+    # CIS L2 - Disable Ctrl-Alt-Del reboot (WARNING: changes console behavior)
+{% endif %}

@@ -15,8 +15,9 @@ command:
     exit-status: 0
     stdout:
       - public
-    # Live-service check: firewall-cmd needs dbus/nftables. Config file above stays strict.
-    skip: {{ .Env.SKIP_KERNEL_CHECKS | default "false" }}
+    # L1 only: at L2 the zone is drop (see l2-drop-zone). firewall-cmd works in
+    # privileged CI containers; gate is level-awareness, not environment.
+    skip: {{ eq (.Env.ENABLE_L2 | default "0") "1" }}
   l2-drop-zone:
     exec: firewall-cmd --get-default-zone | grep -q drop
     exit-status: 0

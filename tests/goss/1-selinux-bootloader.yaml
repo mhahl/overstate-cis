@@ -10,7 +10,8 @@ file:
       - 'security=selinux'
       - 'selinux=1'
       - 'enforcing=1'
-    skip: false
+    # Skipped in containers: grub is absent so the state correctly skips.
+    skip: {{ .Env.SKIP_KERNEL_CHECKS | default "false" }}
 command:
   check-selinux-enforcing:
     exec: getenforce || sestatus

@@ -48,12 +48,15 @@
     - onlyif: test -f /etc/firewalld/firewalld.conf
     # CIS 3.1.x - Ensure firewalld uses nftables backend
 
-# CIS 3.1.x - Default zone public, default target drop (pillar-tunable, L2 tightens)
+{% set strict_drop = level >= 2 and salt['pillar.get']('overstate_cis:firewalld_strict_drop', False) %}
+{% set zone = 'drop' if strict_drop else salt['pillar.get']('overstate_cis:firewalld_default_zone', 'public') %}
+# CIS 3.1.x - Default zone (pillar-tunable; L2 + firewalld_strict_drop tightens to drop)
 3.1.x-firewalld-default-zone:
   cmd.run:
-    - name: firewall-cmd --set-default-zone={{ salt['pillar.get']('overstate_cis:firewalld_default_zone', 'public') }}
-    - unless: firewall-cmd --get-default-zone | grep -q {{ salt['pillar.get']('overstate_cis:firewalld_default_zone', 'public') }}
+    - name: firewall-cmd --set-default-zone={{ zone }}
+    - unless: firewall-cmd --get-default-zone | grep -q {{ zone }}
     - onlyif: systemctl is-active firewalld
+    # CIS 3.1.x - Ensure firewalld default zone (WARNING: drop breaks Docker/k8s, explicit opt-in)
 
 # CIS 3.2.x - Kernel network params via sysctl template (checksum-backed)
 3.2.x-sysctl-cis-params:
@@ -86,10 +89,3 @@
     - value: 1
     - onlyif: test "{{ disable_ipv6 }}" = "True"
     # CIS 3.x - Disable IPv6 (OPT-IN, WARNING: breaks Docker/k8s, commented logic gated)
-
-# WARNING L2: firewalld default-drop tightening — commented by default, uncomment to enforce
-# 3.1.x-L2-firewalld-panic-tighten:
-#   cmd.run:
-#     - name: firewall-cmd --set-default-zone=drop
-#     - onlyif: test "{{ level }}" -ge 2
-#     # CIS L2 - Restrictive default zone (WARNING: breaks Docker/k8s/GUI, requires explicit enable)

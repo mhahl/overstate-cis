@@ -23,6 +23,7 @@ overstate_cis:
   disable_ipv6: False        # WARNING: breaks Docker/k8s if True
   disable_wireless: True     # False on WiFi laptops
   firewalld_default_zone: public
+  firewalld_strict_drop: False  # L2 opt-in: default zone drop (breaks Docker/k8s)
 
   # Password / session policy
   pass_max_days: 365
@@ -33,6 +34,7 @@ overstate_cis:
   faillock_unlock_time: 900
   tmout: 600
   tmout_enable: False        # L2 opt-in (kills idle shells)
+  ctrlaltdel_disable: False  # L2 opt-in (masks ctrl-alt-del.target)
   umask_restrictive: False   # L2 opt-in 027 (breaks GUI/Docker builds)
   usb_disable: False         # L2 opt-in (breaks installers/VMs)
   audit_immutable: False     # L2 opt-in -e 2 (needs reboot to change)

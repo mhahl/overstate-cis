@@ -91,7 +91,7 @@ jobs:
       - name: Enforce and gate apply
         run: |
           if [ "${{ matrix.level }}" = l2 ]; then
-            PILLAR='{"overstate_cis": {"enforce": true, "level": 2, "tmout_enable": true, "umask_restrictive": true, "usb_disable": true, "audit_immutable": true}}'
+            PILLAR='{"overstate_cis": {"enforce": true, "level": 2, "tmout_enable": true, "umask_restrictive": true, "usb_disable": true, "audit_immutable": true, "firewalld_strict_drop": true, "ctrlaltdel_disable": true}}'
           else
             PILLAR='{"overstate_cis": {"enforce": true, "level": 1}}'
           fi

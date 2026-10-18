@@ -33,11 +33,15 @@
 # Enforcement (chmod/chown/remove) is intentionally NOT automated — see audit.sls reporters.
 # Rationale: auto-fixing breaks Docker overlays, k8s volumes, GUI caches. Operator reviews audit output.
 
-# WARNING: USB storage blocking (L2, breaks installers/VMs) — commented by default
-# 6.1.x-L2-usb-storage-blacklist:
-#   file.managed:
-#     - name: /etc/modprobe.d/cis-usb-storage.conf
-#     - contents: |
-#         install usb-storage /bin/true
-#     - onlyif: test "{{ salt['pillar.get']('overstate_cis:usb_disable', False) }}" = "True"
-#     # CIS 6.1.x L2 - Disable USB storage (WARNING: breaks installers, backup drives, VMs)
+# CIS 6.1.x L2 - USB storage blacklist (WARNING: breaks installers, backup drives, VMs).
+# Double-gated: level 2 AND usb_disable: True. file.managed with inline contents.
+{% if salt['pillar.get']('overstate_cis:level', 1) >= 2 %}
+6.1.x-L2-usb-storage-blacklist:
+  file.managed:
+    - name: /etc/modprobe.d/cis-usb-storage.conf
+    - contents: |
+        install usb-storage /bin/true
+    - mode: '0644'
+    - onlyif: test "{{ salt['pillar.get']('overstate_cis:usb_disable', False) }}" = "True"
+    # CIS 6.1.x L2 - Disable USB storage (WARNING: breaks installers, backup drives, VMs)
+{% endif %}

@@ -17,6 +17,8 @@ file:
     exists: true
     contents:
       - 'PASS_MAX_DAYS'
+    # Skipped in containers: minimal images lack login.defs so the states skip.
+    skip: {{ .Env.SKIP_KERNEL_CHECKS | default "false" }}
 command:
   tmout-l2:
     exec: grep -q '^TMOUT=' /etc/profile.d/cis-tmout.sh
@@ -24,5 +26,9 @@ command:
     skip: {{ not (eq (.Env.ENABLE_L2 | default "0") "1") }}
   umask-l2:
     exec: grep -q 'umask 027' /etc/profile
+    exit-status: 0
+    skip: {{ not (eq (.Env.ENABLE_L2 | default "0") "1") }}
+  ctrlaltdel-l2:
+    exec: systemctl is-enabled ctrl-alt-del.target | grep -q masked
     exit-status: 0
     skip: {{ not (eq (.Env.ENABLE_L2 | default "0") "1") }}

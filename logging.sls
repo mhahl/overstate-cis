@@ -1,5 +1,6 @@
 # CIS 4.x logging & auditing. CIS DIL v2.0.0.
 {% from "overstate_cis/map.jinja" import overstate_cis with context %}
+{% set level = salt['pillar.get']('overstate_cis:level', 1) %}
 
 # CIS 4.1.x - rsyslog installed + enabled
 4.1.x-rsyslog-installed:
@@ -72,12 +73,20 @@
     - name: augenrules --load
     - onchanges:
       - file: 4.3.x-audit-rules-cis
+{% if level >= 2 %}
+      - file: 4.3.x-L2-audit-immutable
+{% endif %}
     - onlyif: test -x /sbin/augenrules
 
-# WARNING: immutable audit rules (-e 2) require reboot to change; commented by default
-# 4.3.x-L2-audit-immutable:
-#   file.append:
-#     - name: /etc/audit/rules.d/cis.rules
-#     - text: '-e 2'
-#     - onlyif: test "{{ salt['pillar.get']('overstate_cis:audit_immutable', False) }}" = "True"
-#     # CIS 4.3.x L2 - Immutable audit rules (WARNING: needs reboot to modify, enable explicitly)
+# CIS 4.3.x L2 - Immutable audit rules (WARNING: needs reboot to modify).
+# Double-gated: level 2 AND audit_immutable: True. file.append is idempotent.
+{% if level >= 2 %}
+4.3.x-L2-audit-immutable:
+  file.append:
+    - name: /etc/audit/rules.d/cis.rules
+    - text: '-e 2'
+    - onlyif: test "{{ salt['pillar.get']('overstate_cis:audit_immutable', False) }}" = "True"
+    - require:
+      - file: 4.3.x-audit-rules-cis
+    # CIS 4.3.x L2 - Immutable audit rules (WARNING: needs reboot to modify, enable explicitly)
+{% endif %}
