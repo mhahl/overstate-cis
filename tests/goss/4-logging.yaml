@@ -12,8 +12,13 @@ service:
     skip: false
   auditd:
     enabled: true
-    running: true
     skip: false
+command:
+  auditd-active:
+    exec: systemctl is-active auditd
+    exit-status: 0
+    # Live-kernel check: no audit netlink in containers. Enabled + rules file stay strict.
+    skip: '{{ .Env.SKIP_KERNEL_CHECKS }}'
 file:
   /etc/audit/rules.d/cis.rules:
     exists: true

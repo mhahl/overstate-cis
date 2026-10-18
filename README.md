@@ -39,3 +39,12 @@ from backup, re-run `grub2-mkconfig`.
 - `salt-call --local state.show_sls overstate_cis.{init,packages,config,services,audit}`
 - Podman: `tests/run-goss-podman.sh` (fedora:44, opensuse/tumbleweed:latest, opensuse/leap:16.0)
 - Goss per-section files in `tests/goss/` map 1:1 to state IDs (`<cis-id>-<slug>`)
+
+## Continuous integration
+`.github/workflows/goss.yml` runs on push to `main` and PRs: a render
+gate (`state.show_sls` every SLS on Salt 3008 + YAML parse of
+`pillar.example` and goss files), then a 3-image x L1/L2 matrix in
+privileged systemd containers — audit dry-run, full enforcement gated
+by `scripts/ci/check-apply.py` (allowlisted container-only states are
+documented there), and `goss validate` with `SKIP_KERNEL_CHECKS=1`
+(live-kernel checks skip; file-content checks stay strict).

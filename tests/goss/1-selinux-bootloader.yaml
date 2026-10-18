@@ -17,7 +17,8 @@ command:
     exit-status: 0
     stdout:
       - enforcing
-    skip: false
+    # Live-kernel check: no SELinux in containers. File content above stays strict.
+    skip: '{{ .Env.SKIP_KERNEL_CHECKS }}'
   no-apparmor-param:
     exec: sh -c "! grep -q security=apparmor /etc/default/grub"
     exit-status: 0
