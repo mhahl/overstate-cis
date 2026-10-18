@@ -104,4 +104,12 @@ jobs:
         run: |
           docker cp "$GITHUB_WORKSPACE/tests/goss" target:/goss
           if [ "${{ matrix.level }}" = l2 ]; then ENABLE_L2=1; else ENABLE_L2=0; fi
-          docker exec -e ENABLE_L2="$ENABLE_L2" -e SKIP_KERNEL_CHECKS=1 target goss -g /goss/ validate --format documentation
+          # goss -g takes one file; loop the per-section files so each reports.
+          docker exec -e ENABLE_L2="$ENABLE_L2" -e SKIP_KERNEL_CHECKS=1 target sh -c '
+            fail=0
+            for f in /goss/*.yaml; do
+              echo "=== $f ==="
+              goss -g "$f" validate --format documentation || fail=1
+            done
+            exit $fail
+          '

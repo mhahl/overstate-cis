@@ -13,6 +13,6 @@ for IMG in $IMAGES; do
     (command -v salt-call >/dev/null || (zypper -n in salt-minion goss 2>/dev/null || dnf -y install salt-minion goss 2>/dev/null) || true);
     salt-call --local state.show_sls overstate_cis || echo "show_sls failed (render check)";
     salt-call --local state.apply overstate_cis.audit test=True || true;
-    goss -g /goss/ validate || echo "goss found issues (review)";
+    for f in /goss/*.yaml; do echo "=== $f ==="; goss -g "$f" validate || echo "issues in $f (review)"; done
   '
 done
