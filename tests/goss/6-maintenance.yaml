@@ -12,4 +12,4 @@ command:
   usb-blacklist-l2:
     exec: grep -q 'install usb-storage /bin/true' /etc/modprobe.d/cis-usb-storage.conf
     exit-status: 0
-    skip: '{{ .Env.ENABLE_L2 | default "true" | eq "1" | ternary "false" "true" }}'
+    skip: {{ not (eq (.Env.ENABLE_L2 | default "0") "1") }}

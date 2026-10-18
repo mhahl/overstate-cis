@@ -5,7 +5,8 @@ set -eu
 MODE="${1:---l1}"
 if [ "$MODE" = "--l2" ]; then export ENABLE_L2=1; else export ENABLE_L2=0; fi
 # Containers lack SELinux/audit-netlink/dbus: skip live-kernel checks, keep file-content strict.
-export SKIP_KERNEL_CHECKS=1
+# Values must be true/false: goss unmarshals skip: into bool (quoted "1" fails).
+export SKIP_KERNEL_CHECKS=true
 IMAGES="fedora:44 opensuse/tumbleweed:latest opensuse/leap:16.0"
 for IMG in $IMAGES; do
   echo "=== $IMG (ENABLE_L2=$ENABLE_L2) ==="

@@ -1,7 +1,7 @@
 file:
   /etc/ssh/sshd_config:
     exists: true
-    contains:
+    contents:
       - 'PermitRootLogin no'
       - 'PasswordAuthentication no'
       - 'X11Forwarding no'
@@ -11,18 +11,18 @@ file:
     mode: "0440"
   /etc/security/pwquality.conf:
     exists: true
-    contains:
+    contents:
       - 'minlen = 14'
   /etc/login.defs:
     exists: true
-    contains:
+    contents:
       - 'PASS_MAX_DAYS'
 command:
   tmout-l2:
     exec: grep -q '^TMOUT=' /etc/profile.d/cis-tmout.sh
     exit-status: 0
-    skip: '{{ .Env.ENABLE_L2 | default "true" | eq "1" | ternary "false" "true" }}'
+    skip: {{ not (eq (.Env.ENABLE_L2 | default "0") "1") }}
   umask-l2:
     exec: grep -q 'umask 027' /etc/profile
     exit-status: 0
-    skip: '{{ .Env.ENABLE_L2 | default "true" | eq "1" | ternary "false" "true" }}'
+    skip: {{ not (eq (.Env.ENABLE_L2 | default "0") "1") }}

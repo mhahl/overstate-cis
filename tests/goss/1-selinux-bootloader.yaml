@@ -1,12 +1,12 @@
 file:
   /etc/selinux/config:
     exists: true
-    contains:
+    contents:
       - 'SELINUX=enforcing'
       - 'SELINUXTYPE=targeted'
   /etc/default/grub:
     exists: true
-    contains:
+    contents:
       - 'security=selinux'
       - 'selinux=1'
       - 'enforcing=1'
@@ -18,7 +18,7 @@ command:
     stdout:
       - enforcing
     # Live-kernel check: no SELinux in containers. File content above stays strict.
-    skip: '{{ .Env.SKIP_KERNEL_CHECKS }}'
+    skip: {{ .Env.SKIP_KERNEL_CHECKS | default "false" }}
   no-apparmor-param:
     exec: sh -c "! grep -q security=apparmor /etc/default/grub"
     exit-status: 0

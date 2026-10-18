@@ -18,20 +18,19 @@ command:
     exec: systemctl is-active auditd
     exit-status: 0
     # Live-kernel check: no audit netlink in containers. Enabled + rules file stay strict.
-    skip: '{{ .Env.SKIP_KERNEL_CHECKS }}'
-file:
-  /etc/audit/rules.d/cis.rules:
-    exists: true
-    contains:
-      - '-w /etc/shadow -p wa -k identity'
-  /etc/systemd/journald.conf:
-    exists: true
-    contains:
-      - 'Storage=persistent'
-    # Skipped in containers: the state correctly skips where journald is absent.
-    skip: '{{ .Env.SKIP_KERNEL_CHECKS }}'
-command:
+    skip: {{ .Env.SKIP_KERNEL_CHECKS | default "false" }}
   audit-immutable-l2:
     exec: grep -q '^-e 2' /etc/audit/rules.d/cis.rules
     exit-status: 0
-    skip: '{{ .Env.ENABLE_L2 | default "true" | eq "1" | ternary "false" "true" }}'
+    skip: {{ not (eq (.Env.ENABLE_L2 | default "0") "1") }}
+file:
+  /etc/audit/rules.d/cis.rules:
+    exists: true
+    contents:
+      - '-w /etc/shadow -p wa -k identity'
+  /etc/systemd/journald.conf:
+    exists: true
+    contents:
+      - 'Storage=persistent'
+    # Skipped in containers: the state correctly skips where journald is absent.
+    skip: {{ .Env.SKIP_KERNEL_CHECKS | default "false" }}
