@@ -59,7 +59,8 @@ jobs:
           else
             docker exec prep dnf -y install systemd salt-minion curl gzip
           fi
-          docker exec prep sh -c 'curl -fsSL -o /usr/local/bin/goss https://github.com/goss-org/goss/releases/latest/download/goss-linux-amd64 && chmod +x /usr/local/bin/goss'
+          # goss ships GoReleaser tarballs since v0.4.9 — pin version, extract binary.
+          docker exec prep sh -c 'GOSS_VERSION=v0.4.10; curl -fsSL -o /tmp/goss.tar.gz "https://github.com/goss-org/goss/releases/download/${GOSS_VERSION}/goss_${GOSS_VERSION#v}_linux_x86_64.tar.gz" && tar -xzf /tmp/goss.tar.gz -C /usr/local/bin goss && chmod +x /usr/local/bin/goss && rm /tmp/goss.tar.gz'
           docker commit prep "$CI_IMAGE"
           docker rm -f prep
           INIT=$(docker run --rm "$CI_IMAGE" sh -c 'for p in /sbin/init /usr/sbin/init /lib/systemd/systemd /usr/lib/systemd/systemd; do if test -x "$p"; then echo "$p"; break; fi; done')
