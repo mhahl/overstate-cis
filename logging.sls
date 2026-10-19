@@ -1,8 +1,13 @@
 # CIS 4.x logging & auditing. CIS DIL v2.0.0.
-{% from "overstate_cis/map.jinja" import overstate_cis with context %}
+{% from "overstate_cis/map.jinja" import overstate_cis, controls with context %}
 {% set level = salt['pillar.get']('overstate_cis:level', 1) %}
+# Single render-time gate for the immutable-audit L2 block so both the state
+# and the audit-reload onchanges reference it consistently. The audit_immutable
+# pillar flag remains a runtime onlyif on the state itself.
+{% set immutable_rendered = level >= 2 and controls.get('audit_immutable', True) %}
 
 # CIS 4.1.x - rsyslog installed + enabled
+{% if controls.get('rsyslog', True) %}
 4.1.x-rsyslog-installed:
   pkg.installed:
     - name: {{ overstate_cis.rsyslog_pkg }}
@@ -21,14 +26,18 @@
     - template: jinja
     - backup: minion
     # CIS 4.1.x - Ensure rsyslog default file permissions and forwarding are configured
+{% endif %}
 
 # CIS 4.2.x - logrotate present (config left stock, permissions checked in audit)
+{% if controls.get('logrotate', True) %}
 4.2.x-logrotate-installed:
   pkg.installed:
     - name: logrotate
     # CIS 4.2.1 - Ensure logrotate is installed
+{% endif %}
 
 # CIS 4.2.x - journald persistent storage (skipped where journald is not installed)
+{% if controls.get('journald_persistent', True) %}
 4.2.x-journald-persistent:
   file.replace:
     - name: /etc/systemd/journald.conf
@@ -38,8 +47,10 @@
     - backup: minion
     - onlyif: test -f /etc/systemd/journald.conf
     # CIS 4.2.2 - Ensure journald persistent logging is enabled
+{% endif %}
 
 # CIS 4.3.x - auditd installed + enabled, ruleset in /etc/audit/rules.d/
+{% if controls.get('auditd', True) %}
 4.3.x-auditd-installed:
   pkg.installed:
     - name: {{ overstate_cis.audit_pkg }}
@@ -50,7 +61,9 @@
     - name: {{ overstate_cis.auditd_svc }}
     - enable: True
     # CIS 4.3.2 - Ensure auditd service is enabled
+{% endif %}
 
+{% if controls.get('audit_rules', True) %}
 4.3.x-audit-rules-cis:
   file.managed:
     - name: /etc/audit/rules.d/cis.rules
@@ -73,14 +86,16 @@
     - name: augenrules --load
     - onchanges:
       - file: 4.3.x-audit-rules-cis
-{% if level >= 2 %}
+{% if immutable_rendered %}
       - file: 4.3.x-L2-audit-immutable
 {% endif %}
     - onlyif: test -x /sbin/augenrules
+{% endif %}
 
 # CIS 4.3.x L2 - Immutable audit rules (WARNING: needs reboot to modify).
-# Double-gated: level 2 AND audit_immutable: True. file.append is idempotent.
-{% if level >= 2 %}
+# Triple-gated: level 2 AND audit_immutable: True AND controls.audit_immutable.
+# file.append is idempotent.
+{% if immutable_rendered %}
 4.3.x-L2-audit-immutable:
   file.append:
     - name: /etc/audit/rules.d/cis.rules

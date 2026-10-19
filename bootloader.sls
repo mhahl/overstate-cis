@@ -1,8 +1,12 @@
 # CIS 1.4.x bootloader — SELinux cmdline, strip AppArmor. CIS DIL v2.0.0.
-{% from "overstate_cis/map.jinja" import overstate_cis with context %}
+{% from "overstate_cis/map.jinja" import overstate_cis, controls with context %}
 {% set grub_file = overstate_cis.grub_default_file %}
 {% set is_transactional = salt['cmd.run']('test -x /usr/sbin/transactional-update && echo yes || echo no', python_shell=True).strip() == 'yes' %}
 
+# The `grub` control switches the whole bootloader section (cmdline edit, AppArmor
+# strip, grub.cfg regen). Set controls.grub: False on systems without grub tooling
+# (containers, transactional hosts that regenerate elsewhere, etc.).
+{% if controls.get('grub', True) %}
 # CIS 1.4.1 - Ensure bootloader cmdline includes security=selinux selinux=1 enforcing=1
 1.4.1-grub-selinux-cmdline:
   file.replace:
@@ -35,4 +39,5 @@
     - onchanges:
       - file: 1.4.1-grub-selinux-cmdline
       - cmd: 1.4.1-grub-strip-apparmor-param
+{% endif %}
 {% endif %}

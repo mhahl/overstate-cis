@@ -32,6 +32,11 @@ from backup, re-run `grub2-mkconfig`.
 - `usb-storage` blacklist — breaks installers/VMs
 - `audit -e 2` immutable — needs reboot to modify
 - `umask 027`, `TMOUT`, `IPv6 disable`, `wireless mask`, `Ctrl-Alt-Del mask` — break GUI/desktops/laptops
+- Every control above (and every control in the formula) has a per-control
+  toggle: set `overstate_cis:controls:<name>: False` in pillar to turn it off
+  (default all on). Full key list: `pillar.example` `controls:` block and
+  `docs/admin-guide.md` → "Per-control toggles". Copy-paste reference with all
+  33 toggles and a conflict-avoidance example: `examples/conflict-avoidance.sls`.
 - World-writable/unowned/SUID auto-fix is intentionally report-only (audit.sls) — never auto-chmod overlays/volumes
 - SELinux-confined services on freshly migrated hosts need relabel+reboot before enforcing
 

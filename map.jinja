@@ -56,6 +56,11 @@
     'selinux_runtime_managed': False,
   },
 }, grain='os_family', merge=salt['pillar.get']('overstate_cis:lookup', {}), default='RedHat') %}
+{# Per-control master switches. Every control defaults to enabled (True); set
+   overstate_cis:controls:<name>: False in pillar to skip that control for
+   conflict avoidance. Guard states (0-guard-supported-os-family) are never
+   toggled. Full key list + defaults: pillar.example:1 and docs/admin-guide.md. #}
+{% set controls = salt['pillar.get']('overstate_cis:controls', {}) %}
 {# Unsupported families render with the RedHat map but never apply: packages.sls
    starts with 0-guard-supported-os-family (test.fail_without_changes).
    selinux_runtime_managed gates selinux.mode/boolean at render time: True on

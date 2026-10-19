@@ -20,6 +20,7 @@ Two modes, controlled by pillar:
 | `overstate_cis:enforce: True` | Enforcement. Packages installed, configs managed, services masked. |
 | `overstate_cis:level: 1` (default) | Level 1 controls only. |
 | `overstate_cis:level: 2` | Level 2 controls additionally enabled, but each risky item still needs its own opt-in flag (`tmout_enable`, `umask_restrictive`, `usb_disable`, `audit_immutable`). |
+| `overstate_cis:controls` (all `True`) | Per-control toggles. Set any key to `False` to turn that control off — the conflict-avoidance switch (see admin guide "Per-control toggles"). Layered on top of the level/opt-in gates above. |
 
 Every state ID embeds its control (`1.6.1-selinux-enforcing-mode:` in
 `selinux.sls:1`) plus a `# CIS x.y.z - Title` comment, so failures map
@@ -97,4 +98,11 @@ Useful grains on these minions: `os`, `osfinger`, `os_family`
 - Laptops/desktops: `disable_wireless: True` default masks
   `wpa_supplicant`; set `False` in pillar for WiFi machines before
   enforcing. GUI breakage from `umask 027` / `TMOUT` is why both are
-  L2 opt-ins.
+  L2 opt-ins. If any control still conflicts with a workload, switch it
+  off individually with `overstate_cis:controls:<name>: False` (all
+  controls default on; keys listed in `pillar.example:1` and the admin
+  guide).
+- Disabling a control in goss runs: the goss files assert the
+  default-enabled outcome, so a host with `controls.<name>: False`
+  fails that section's checks. Run only the goss sections whose
+  controls you left on, or treat the skipped ones as expected.

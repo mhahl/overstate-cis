@@ -1,5 +1,5 @@
 # CIS 1.x/2.x/4.x packages. CIS DIL v2.0.0. Salt 3008.
-{% from "overstate_cis/map.jinja" import overstate_cis with context %}
+{% from "overstate_cis/map.jinja" import overstate_cis, controls with context %}
 {% set pkgs = [
   overstate_cis.audit_pkg,
   overstate_cis.ssh_server_pkg,
@@ -13,7 +13,6 @@
   overstate_cis.firewalld_pkg,
   overstate_cis.sudo_pkg
 ] + ([overstate_cis.selinux_python_pkg] if overstate_cis.selinux_python_pkg else []) %}
-{% set gpg_enforce = salt['pillar.get']('overstate_cis:pkg_gpg_enforce', True) %}
 
 # CIS 0 - Fail closed on unsupported OS (only RedHat/Suse families supported)
 0-guard-supported-os-family:
@@ -23,7 +22,7 @@
     # CIS 0 - Refuse to enforce outside Fedora/openSUSE
 
 # CIS 1.2.x — package manager GPG enforcement (RedHat dnf.conf)
-{% if grains['os_family'] == 'RedHat' %}
+{% if grains['os_family'] == 'RedHat' and controls.get('gpg_enforce', True) %}
 1.2.1-dnf-gpgcheck-enforced:
   file.replace:
     - name: {{ overstate_cis.dnf_conf }}
@@ -36,7 +35,7 @@
 {% endif %}
 
 # CIS 1.2.x — zypper GPG enforcement (Suse zypp.conf + repo gpgcheck)
-{% if grains['os_family'] == 'Suse' %}
+{% if grains['os_family'] == 'Suse' and controls.get('gpg_enforce', True) %}
 1.2.1-zypp-gpgcheck-enforced:
   file.replace:
     - name: {{ overstate_cis.zypp_conf }}
@@ -49,9 +48,11 @@
 {% endif %}
 
 # CIS 1.6.x / 2.x / 4.x — required packages present
+{% if controls.get('packages_required', True) %}
 {% for pkg in pkgs %}
 {{ 'pkg-' ~ pkg ~ '-installed' }}:
   pkg.installed:
     - name: {{ pkg }}
     # CIS 1.6/2.2/4.1 — Ensure required hardening packages are installed
 {% endfor %}
+{% endif %}

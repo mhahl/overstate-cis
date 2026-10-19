@@ -1,8 +1,10 @@
 # CIS legacy AppArmor→SELinux migration — PILLAR-GATED, DEFAULT OFF. CIS DIL v2.0.0.
 # Enable ONLY with overstate_cis:legacy_apparmor_migration: True on hosts provisioned
 # pre-Feb-2025 (or Leap 15.x imports). Requires reboot + relabel. Never auto-reboots.
+# The controls.legacy_migration toggle (default True) is a second, independent kill-switch.
+{% from "overstate_cis/map.jinja" import controls with context %}
 {% set migrate = salt['pillar.get']('overstate_cis:legacy_apparmor_migration', False) %}
-{% if migrate %}
+{% if migrate and controls.get('legacy_migration', True) %}
 
 # CIS LEGACY-1 - Detect AppArmor LSM (informational, always reports)
 legacy-1-detect-apparmor-lsm:

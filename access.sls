@@ -1,9 +1,10 @@
 # CIS 5.x access control — sudo, cron, sshd, PAM, umask. CIS DIL v2.0.0.
-{% from "overstate_cis/map.jinja" import overstate_cis with context %}
+{% from "overstate_cis/map.jinja" import overstate_cis, controls with context %}
 {% set level = salt['pillar.get']('overstate_cis:level', 1) %}
 {% set sshd_overrides = salt['pillar.get']('overstate_cis:sshd_options', {}) %}
 
 # CIS 5.1.x - sudo package + sudoers perms
+{% if controls.get('sudo', True) %}
 5.1.x-sudo-installed:
   pkg.installed:
     - name: {{ overstate_cis.sudo_pkg }}
@@ -15,8 +16,10 @@
     - mode: '0440'
     - replace: False
     # CIS 5.1.2 - Ensure sudoers permissions are 0440
+{% endif %}
 
 # CIS 5.1.x - cron perms
+{% if controls.get('cron_perms', True) %}
 5.1.x-cron-allow-perms:
   file.managed:
     - name: /etc/cron.allow
@@ -30,9 +33,11 @@
     - mode: '0600'
     - replace: False
     # CIS 5.1.x - Ensure crontab permissions are 0600
+{% endif %}
 
 # CIS 5.2.x - host keys must exist before sshd -t can validate the config
 # (fresh installs/containers lack them; real hosts already have them so this skips)
+{% if controls.get('sshd', True) %}
 5.2.x-sshd-hostkeys-present:
   cmd.run:
     - name: ssh-keygen -A
@@ -59,8 +64,10 @@
     - enable: True
     - watch:
       - file: 5.2.x-sshd-config-managed
+{% endif %}
 
 # CIS 5.3.x - PAM pwquality (Fedora libpwquality, SUSE pam_pwquality, see map.jinja)
+{% if controls.get('pwquality', True) %}
 5.3.x-pwquality-conf:
   file.managed:
     - name: /etc/security/pwquality.conf
@@ -68,9 +75,10 @@
     - template: jinja
     - backup: minion
     # CIS 5.3.x - Ensure password quality policy (minlen 14, dcredit/ucredit/ocredit/lcredit)
+{% endif %}
 
 # CIS 5.x L2 - restrictive umask 027 (WARNING: breaks GUI/desktop apps, Docker builds)
-{% if level >= 2 %}
+{% if level >= 2 and controls.get('umask', True) %}
 5.x-L2-umask-027-profile:
   file.append:
     - name: /etc/profile

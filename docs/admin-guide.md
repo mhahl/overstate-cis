@@ -60,6 +60,7 @@ Overstate UI paths are in the [Overstate guide](overstate-guide.md).
 |---|---|---|
 | `enforce` | `False` | Master switch. False = audit-only. |
 | `level` | `1` | `2` enables L2 blocks (each still needs its flag). |
+| `controls` | all `True` | Per-control toggles. Set any key to `False` to skip that control (conflict avoidance). Full list below. |
 | `selinux_booleans` | `{}` | e.g. `{httpd_can_network_connect: 'on'}`. `persist: True`. |
 | `legacy_apparmor_migration` | `False` | True only for pre-Feb-2025 / Leap 15.x imports. Manual reboot required. |
 | `sshd_options` | `{}` | Merged over secure template defaults (`PermitRootLogin no`, …). |
@@ -81,6 +82,72 @@ Overstate UI paths are in the [Overstate guide](overstate-guide.md).
 | `mask_services` | `[xinetd, avahi-daemon, cups, dhcpd, slpd]` | Extra services appended via pillar. Never AppArmor here. |
 | `log_server` | `@localhost` | rsyslog forward target. |
 | `lookup` | `{}` | OS-map overrides merged in `map.jinja`. Rarely needed. |
+
+### Per-control toggles (conflict avoidance)
+
+Every control can be switched off individually through
+`overstate_cis:controls:<name>` (default `True` = enabled). This is the
+turn-off knob when one CIS control conflicts with a workload
+(Docker/k8s, laptops, VMs, site firewall policy, kept-AppArmor hosts).
+Toggles are layered on top of the existing opt-ins — e.g.
+`usb_storage` still needs `level: 2` and `usb_disable: True` regardless
+of the `controls.usb_storage` switch.
+
+| Control | States it gates (state IDs) | Typical conflict to avoid |
+|---|---|---|
+| `packages_required` | `pkg-<pkg>-installed` in `packages.sls` | Don't install postfix/sudo/… |
+| `gpg_enforce` | `1.2.1-dnf/zypp-gpgcheck-enforced` | Internal repos serving unsigned rpms |
+| `firewalld` | `3.1.x-firewalld-*` (install/enable/nftables) | Hosts using another firewall frontend |
+| `firewalld_default_zone` | `3.1.x-firewalld-default-zone` | Site/Docker default zone |
+| `firewall_strict_drop` | zone tightening in `3.1.x-firewalld-default-zone` | Docker/k8s networking |
+| `sysctl_kernel` | `3.2.x-sysctl-*` | Router/gateway boxes using ip_forward etc. |
+| `wireless` | `3.3.x-wireless-masked` | WiFi laptops (`wpa_supplicant`) |
+| `ipv6` | `3.x-ipv6-disable-optin` | IPv6-only workloads |
+| `mask_services` | `2.1.x-service-masked-*` | Site services named like defaults |
+| `cups_socket` | `2.2.x-cups-socket-masked` | Print servers |
+| `postfix_local_only` | `2.3.x-postfix-local-only` | MTA relaying mail out |
+| `password_aging` | `5.4.x-login-defs-*` | AD/LDAP-managed password policy |
+| `faillock` | `5.3.x-faillock-conf` | SSO/PAM stacks that manage lockout |
+| `tmout` | `5.4.x-L2-tmout-600` | Long-running GUI/SSH sessions |
+| `securetty` | `5.4.x-root-securetty` | Serial-console root logins |
+| `ctrlaltdel` | `5.4.x-L2-mask-ctrlaltdel` | Console-restart muscle memory (datacenter) |
+| `sudo` | `5.1.x-sudo-*` | Policy-driven sudoers |
+| `cron_perms` | `5.1.x-cron-allow-perms`, `5.1.x-crontab-perms` | Cron tooling rewriting crontab |
+| `sshd` | `5.2.x-sshd-*` (keys, config, service) | Sites with their own sshd_config pipeline |
+| `pwquality` | `5.3.x-pwquality-conf` | Custom password-quality modules |
+| `umask` | `5.x-L2-umask-027-profile` | GUI/desktop, Docker builds |
+| `rsyslog` | `4.1.x-rsyslog-*` | Journald-only logging policies |
+| `logrotate` | `4.2.x-logrotate-installed` | — |
+| `journald_persistent` | `4.2.x-journald-persistent` | RAM-only logging hosts |
+| `auditd` | `4.3.x-auditd-*` (pkg/service) | Audit conflict with SIEM agents |
+| `audit_rules` | `4.3.x-audit-rules-cis`, `4.3.x-audit-max-log-file`, `4.3.x-audit-reload` | Custom audit rulesets |
+| `audit_immutable` | `4.3.x-L2-audit-immutable` | Needs reboot to undo `-e 2` |
+| `passwd_perms` | `6.1.1-{passwd,group,shadow,gshadow}-perms` | Sites with NSS/nscd-managed bit locks |
+| `usb_storage` | `6.1.x-L2-usb-storage-blacklist` | Installers, backup drives, VMs |
+| `selinux` | `1.6.x-selinux-*` (policy, config, mode, booleans) | Hosts that intentionally keep AppArmor/permissive |
+| `grub` | `1.4.x-grub-*` (cmdline, strip, mkconfig) | Containers/transactional hosts without grub tooling |
+| `legacy_migration` | `legacy-*` in `legacy_migration.sls` | Second kill-switch for the migration suite |
+| `audit_reports` | all `*.-audit-*.report` in `audit.sls` | Silent/full-disk hosts; `audit_ww_files` still finer-gates the world-writable scan |
+
+Example — a Docker host that wants everything except the disruptive bits:
+
+```yaml
+overstate_cis:
+  enforce: true
+  level: 2
+  controls:
+    firewalld_default_zone: False   # keep Docker's own zone handling
+    firewall_strict_drop: False     # never flip default zone to drop
+    usb_storage: False              # VMs on this host need USB passthrough
+    wireless: False                 # if it's a laptop
+```
+
+A copy-paste reference listing every control with its toggle (+ the minimal
+turn-off-only form) ships as `examples/conflict-avoidance.sls`.
+
+The only state never toggled is the safety guard
+`0-guard-supported-os-family` (`packages.sls`), which fails closed on
+unsupported OSes by design.
 
 Goss L2 flags are environment, not pillar: `ENABLE_L2=1`.
 

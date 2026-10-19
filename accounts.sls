@@ -1,7 +1,9 @@
 # CIS 5.3-5.4 / 6.2 accounts & password policy. CIS DIL v2.0.0.
+{% from "overstate_cis/map.jinja" import controls with context %}
 {% set level = salt['pillar.get']('overstate_cis:level', 1) %}
 
 # CIS 5.4.x - login.defs PASS_MAX_DAYS / MIN_DAYS / WARN_AGE
+{% if controls.get('password_aging', True) %}
 5.4.x-login-defs-max-days:
   file.replace:
     - name: /etc/login.defs
@@ -31,8 +33,10 @@
     - backup: minion
     - onlyif: test -f /etc/login.defs
     # CIS 5.4.1 - Ensure password warning age is configured
+{% endif %}
 
 # CIS 5.3.x - faillock lockout policy (common-auth)
+{% if controls.get('faillock', True) %}
 5.3.x-faillock-conf:
   file.managed:
     - name: /etc/security/faillock.conf
@@ -40,9 +44,10 @@
     - template: jinja
     - backup: minion
     # CIS 5.3.x - Ensure account lockout (deny=5, unlock_time=900, even_deny_root)
+{% endif %}
 
 # CIS 5.4.x - TMOUT session timeout (WARNING: breaks long GUI/SSH sessions, L2-gated example)
-{% if level >= 2 %}
+{% if level >= 2 and controls.get('tmout', True) %}
 5.4.x-L2-tmout-600:
   file.managed:
     - name: /etc/profile.d/cis-tmout.sh
@@ -56,18 +61,20 @@
 {% endif %}
 
 # CIS 5.4.x - root login restrictions (securetty + nologin shell check documented in audit)
+{% if controls.get('securetty', True) %}
 5.4.x-root-securetty:
   file.managed:
     - name: /etc/securetty
     - mode: '0600'
     - replace: False
     # CIS 5.4.x - Ensure root login is restricted to system console
+{% endif %}
 
 # CIS 5.4.x L2 - Mask Ctrl-Alt-Del reboot target (WARNING: changes console behavior).
-# Double-gated: level 2 AND ctrlaltdel_disable: True.
+# Triple-gated: level 2 AND ctrlaltdel_disable: True AND controls.ctrlaltdel.
 # Use systemctl mask --force: Fedora ships /etc/systemd/system/ctrl-alt-del.target
 # as a symlink to reboot.target, so plain `mask` (what service.masked runs) refuses.
-{% if level >= 2 %}
+{% if level >= 2 and controls.get('ctrlaltdel', True) %}
 5.4.x-L2-mask-ctrlaltdel:
   cmd.run:
     - name: systemctl mask --force ctrl-alt-del.target

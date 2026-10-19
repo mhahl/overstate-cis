@@ -1,7 +1,11 @@
 # CIS audit.sls — READ-ONLY reporting, test=True safe. CIS DIL v2.0.0.
 # No file.managed/pkg/service changes here. Only cmd.run + test.show_notification.
 # Safe to run with `salt-call --local state.apply overstate_cis.audit test=True`.
-
+{% from "overstate_cis/map.jinja" import controls with context %}
+# `audit_reports` switches the whole read-only report suite; set False to skip
+# all reporters (e.g. on noisy/full disks). The world-writable scan additionally
+# honors the finer audit_ww_files flag below.
+{% if controls.get('audit_reports', True) %}
 # CIS 1.x - partition scheme / mount checks (report-only, never partitions)
 1.x-audit-mount-report:
   cmd.run:
@@ -86,3 +90,4 @@
         find / -xdev -type f -perm -4000 -print 2>/dev/null | head -30; echo "AUDIT: SUID review complete (manual review required)"
     - stateful: False
     # CIS 6.1.x - Report SUID binaries for manual review
+{% endif %}

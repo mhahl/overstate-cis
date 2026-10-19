@@ -1,7 +1,11 @@
 # CIS 1.6.x SELinux — native enforcing/targeted on Fedora + openSUSE. CIS DIL v2.0.0.
-{% from "overstate_cis/map.jinja" import overstate_cis with context %}
+{% from "overstate_cis/map.jinja" import overstate_cis, controls with context %}
 {% set booleans = salt['pillar.get']('overstate_cis:selinux_booleans', {}) %}
 
+# The `selinux` control switches the WHOLE SELinux section (policy install,
+# /etc/selinux/config, runtime mode, booleans). Set controls.selinux: False to
+# leave SELinux untouched (e.g. hosts that intentionally keep AppArmor/permissive).
+{% if controls.get('selinux', True) %}
 # CIS 1.6.1 - Ensure SELinux is installed
 1.6.1-selinux-policy-installed:
   pkg.installed:
@@ -45,4 +49,5 @@
     - persist: True
     # CIS 1.6.x - Ensure SELinux boolean {{ bname }} is {{ bval }}
 {% endfor %}
+{% endif %}
 {% endif %}

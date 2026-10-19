@@ -5,6 +5,47 @@ overstate_cis:
   # CIS level: 1 skips L2 controls entirely; 2 enables L2 blocks (each still needs per-flag opt-in).
   level: 1
 
+  # Per-control master toggles. Every control defaults to True (enabled).
+  # Set a key to False to turn that control OFF — the conflict-avoidance switch
+  # (e.g. containers without grub tooling -> grub: False; WiFi laptops ->
+  # wireless: False; hosts that keep AppArmor -> selinux: False). This is
+  # layered ON TOP of the finer opt-in flags below (level + per-flag), so
+  # disabling a control there does not change those semantics.
+  controls:
+    packages_required: True     # install all required hardening packages
+    gpg_enforce: True           # dnf/zypp gpgcheck=1
+    firewalld: True             # install + enable firewalld, nftables backend
+    firewalld_default_zone: True  # firewall-cmd --set-default-zone (conflicts with site zones/Docker)
+    firewall_strict_drop: True  # L2 default-zone drop tightening (needs L2 + flag)
+    sysctl_kernel: True         # /etc/sysctl.d/99-cis.conf params + apply
+    wireless: True              # mask wpa_supplicant (needs disable_wireless)
+    ipv6: True                  # IPv6 disable opt-in (needs disable_ipv6)
+    mask_services: True         # mask xinetd/avahi/cups/dhcpd/slpd
+    cups_socket: True           # mask cups.socket
+    postfix_local_only: True    # postfix inet_interfaces=localhost
+    password_aging: True        # login.defs PASS_MAX/MIN/WARN days
+    faillock: True              # /etc/security/faillock.conf lockout
+    tmout: True                 # TMOUT profile (needs L2 + tmout_enable)
+    securetty: True             # /etc/securetty 0600
+    ctrlaltdel: True            # mask ctrl-alt-del.target (needs L2 + ctrlaltdel_disable)
+    sudo: True                  # sudo pkg + sudoers 0440
+    cron_perms: True            # cron.allow/crontab 0600
+    sshd: True                  # host keys + sshd_config template + sshd service
+    pwquality: True             # /etc/security/pwquality.conf
+    umask: True                 # umask 027 (needs L2 + umask_restrictive)
+    rsyslog: True               # rsyslog pkg + service + 99-cis.conf
+    logrotate: True             # logrotate pkg
+    journald_persistent: True   # journald Storage=persistent
+    auditd: True                # audit pkg + service
+    audit_rules: True           # cis.rules + auditd.conf size + augenrules load
+    audit_immutable: True       # -e 2 immutable rules (needs L2 + flag)
+    passwd_perms: True          # /etc/passwd|group|shadow|gshadow modes
+    usb_storage: True           # usb-storage blacklist (needs L2 + usb_disable)
+    selinux: True               # SELinux policy + enforcing/targeted + booleans
+    grub: True                  # grub cmdline + AppArmor strip + grub.cfg regen
+    legacy_migration: True      # AppArmor->SELinux migration suite (needs flag below)
+    audit_reports: True         # all read-only audit.sls reporters
+
   # SELinux booleans, e.g. { httpd_can_network_connect: 'on' }. Applied with persist=True.
   selinux_booleans: {}
 
