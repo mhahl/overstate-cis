@@ -1,18 +1,43 @@
+# CIS 2.x — insecure services masked, cups socket, MTA local-only (services.sls).
+# One test per state, named after the control so a failure identifies the
+# control. Package presence (2.2.x-openssh-server-installed,
+# 2.3.x-postfix-installed) lives in 0-packages.yaml.
+
 service:
   xinetd:
+    title: 2.1.x-service-masked-xinetd
     enabled: false
     running: false
     skip: false
   avahi-daemon:
+    title: 2.1.x-service-masked-avahi-daemon
     enabled: false
     running: false
     skip: false
   cups:
+    title: 2.1.x-service-masked-cups
     enabled: false
     running: false
     skip: false
+  dhcpd:
+    title: 2.1.x-service-masked-dhcpd
+    enabled: false
+    running: false
+    skip: false
+  slpd:
+    title: 2.1.x-service-masked-slpd
+    enabled: false
+    running: false
+    skip: false
+  cups.socket:
+    title: 2.2.x-cups-socket-masked
+    enabled: false
+    running: false
+    skip: false
+
 file:
   /etc/postfix/main.cf:
+    title: 2.3.x-postfix-local-only
     exists: true
     contents:
       - 'inet_interfaces = localhost'

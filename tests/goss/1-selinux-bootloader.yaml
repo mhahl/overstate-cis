@@ -1,10 +1,14 @@
+# CIS 1.4 / 1.6 — bootloader + SELinux (bootloader.sls + selinux.sls).
+# One test per state, named after the control so a failure identifies the
+# control. Package presence (1.6.1-selinux-policy-installed) lives in
+# 0-packages.yaml. Live-kernel checks skip in containers (SKIP_KERNEL_CHECKS);
+# file-content checks stay strict.
+# 1.6.x-selinux-boolean-<name>: pillar-driven, none rendered by default. Add a
+# per-boolean test here when you set overstate_cis:selinux_booleans.
+
 file:
-  /etc/selinux/config:
-    exists: true
-    contents:
-      - 'SELINUX=enforcing'
-      - 'SELINUXTYPE=targeted'
   /etc/default/grub:
+    title: 1.4.1-grub-selinux-cmdline
     exists: true
     contents:
       - 'security=selinux'
@@ -12,15 +16,42 @@ file:
       - 'enforcing=1'
     # Skipped in containers: grub is absent so the state correctly skips.
     skip: {{ .Env.SKIP_KERNEL_CHECKS | default "false" }}
+
 command:
-  check-selinux-enforcing:
+  1.4.1-grub-strip-apparmor-param:
+    # No security=apparmor may remain. Passes where the file is absent.
+    exec: sh -c "! grep -q security=apparmor /etc/default/grub"
+    exit-status: 0
+    skip: false
+  1.4.2-grub-mkconfig-bios:
+    exec: grep -q 'security=selinux' /boot/grub2/grub.cfg
+    exit-status: 0
+    # Skipped in containers: no grub tooling, state allowlisted.
+    skip: {{ .Env.SKIP_KERNEL_CHECKS | default "false" }}
+  1.4.2-grub-transactional-update:
+    exec: grep -q 'security=selinux' /boot/grub2/grub.cfg
+    exit-status: 0
+    # Skipped in containers: no grub tooling, state allowlisted.
+    skip: {{ .Env.SKIP_KERNEL_CHECKS | default "false" }}
+  1.6.2-selinux-config-enforcing:
+    exec: grep -q '^SELINUX=enforcing' /etc/selinux/config
+    exit-status: 0
+    skip: false
+  1.6.2-selinux-config-targeted:
+    exec: grep -q '^SELINUXTYPE=targeted' /etc/selinux/config
+    exit-status: 0
+    skip: false
+  1.6.3-selinux-mode-enforcing:
     exec: getenforce || sestatus
     exit-status: 0
     stdout:
       - enforcing
-    # Live-kernel check: no SELinux in containers. File content above stays strict.
+    # Live-kernel check: no SELinux in containers.
     skip: {{ .Env.SKIP_KERNEL_CHECKS | default "false" }}
-  no-apparmor-param:
-    exec: sh -c "! grep -q security=apparmor /etc/default/grub"
-    exit-status: 0
-    skip: false
+# Not covered here:
+# - legacy_migration.sls (legacy-1..5, legacy-skipped): pillar-gated, default
+#   off; one-way transition states (mask apparmor, touch /.autorelabel) leave
+#   no steady-state artifact to assert.
+# - audit.sls reporters: read-only cmd.run states; they produce a report, not
+#   an enforced outcome. Audit-only mode has nothing for goss to verify.
+

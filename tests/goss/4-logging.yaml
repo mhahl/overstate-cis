@@ -1,36 +1,55 @@
-package:
-  rsyslog:
-    installed: true
-    skip: false
-  audit:
-    installed: true
-    skip: false
+# CIS 4.x — rsyslog, logrotate, journald, auditd (logging.sls).
+# One test per state, named after the control so a failure identifies the
+# control. Package presence (4.1.1-rsyslog-installed, 4.2.1-logrotate-installed,
+# 4.3.1-auditd-installed) lives in 0-packages.yaml. Live-kernel checks skip in
+# containers (SKIP_KERNEL_CHECKS); file-content checks stay strict.
+
 service:
   rsyslog:
+    title: 4.1.2-rsyslog-enabled
     enabled: true
     running: true
     skip: false
   auditd:
+    title: 4.3.2-auditd-enabled
     enabled: true
     skip: false
-command:
-  auditd-active:
-    exec: systemctl is-active auditd
-    exit-status: 0
-    # Live-kernel check: no audit netlink in containers. Enabled + rules file stay strict.
-    skip: {{ .Env.SKIP_KERNEL_CHECKS | default "false" }}
-  audit-immutable-l2:
-    exec: grep -q '^-e 2' /etc/audit/rules.d/cis.rules
-    exit-status: 0
-    skip: {{ not (eq (.Env.ENABLE_L2 | default "0") "1") }}
+
 file:
-  /etc/audit/rules.d/cis.rules:
+  /etc/rsyslog.d/99-cis.conf:
+    title: 4.1.x-rsyslog-cis-conf
     exists: true
-    contents:
-      - '-w /etc/shadow -p wa -k identity'
+    skip: false
   /etc/systemd/journald.conf:
+    title: 4.2.2-journald-persistent
     exists: true
     contents:
       - 'Storage=persistent'
     # Skipped in containers: the state correctly skips where journald is absent.
     skip: {{ .Env.SKIP_KERNEL_CHECKS | default "false" }}
+  /etc/audit/rules.d/cis.rules:
+    title: 4.3.x-audit-rules-cis
+    exists: true
+    contents:
+      - '-w /etc/shadow -p wa -k identity'
+    skip: false
+
+command:
+  4.3.2-auditd-active:
+    exec: systemctl is-active auditd
+    exit-status: 0
+    # Live-kernel check: no audit netlink in containers. Enabled + rules file stay strict.
+    skip: {{ .Env.SKIP_KERNEL_CHECKS | default "false" }}
+  4.3.x-audit-max-log-file:
+    exec: grep -q '^max_log_file = 50' /etc/audit/auditd.conf
+    exit-status: 0
+    skip: false
+  4.3.x-audit-reload:
+    exec: augenrules --check
+    exit-status: 0
+    # Live-kernel check: needs a loaded audit ruleset; container state is allowlisted.
+    skip: {{ .Env.SKIP_KERNEL_CHECKS | default "false" }}
+  4.3.x-L2-audit-immutable:
+    exec: grep -q '^-e 2' /etc/audit/rules.d/cis.rules
+    exit-status: 0
+    skip: {{ not (eq (.Env.ENABLE_L2 | default "0") "1") }}

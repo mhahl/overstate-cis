@@ -1,34 +1,85 @@
+# CIS 5.x — access control + accounts (access.sls + accounts.sls).
+# One test per state, named after the control so a failure identifies the
+# control. Package presence (5.1.1-sudo-installed, 5.2.x-openssh-server-installed,
+# 5.3.x-pwquality-installed) lives in 0-packages.yaml. Live-kernel checks skip
+# in containers (SKIP_KERNEL_CHECKS); file-content checks stay strict.
+
 file:
   /etc/ssh/sshd_config:
+    title: 5.2.x-sshd-config-managed
     exists: true
     contents:
       - 'PermitRootLogin no'
       - 'PasswordAuthentication no'
       - 'X11Forwarding no'
       - 'MaxAuthTries 4'
+    skip: false
   /etc/sudoers:
+    title: 5.1.2-sudoers-perms
     exists: true
     mode: "0440"
+    skip: false
+  /etc/cron.allow:
+    title: 5.1.x-cron-allow-perms
+    exists: true
+    mode: "0600"
+    skip: false
+  /etc/crontab:
+    title: 5.1.x-crontab-perms
+    exists: true
+    mode: "0600"
+    skip: false
   /etc/security/pwquality.conf:
+    title: 5.3.x-pwquality-conf
     exists: true
     contents:
       - 'minlen = 14'
-  /etc/login.defs:
+    skip: false
+  /etc/security/faillock.conf:
+    title: 5.3.x-faillock-conf
     exists: true
-    contents:
-      - 'PASS_MAX_DAYS'
-    # Skipped in containers: minimal images lack login.defs so the states skip.
-    skip: {{ .Env.SKIP_KERNEL_CHECKS | default "false" }}
+    skip: false
+  /etc/securetty:
+    title: 5.4.x-root-securetty
+    exists: true
+    mode: "0600"
+    skip: false
+
+service:
+  sshd:
+    title: 5.2.x-sshd-service
+    enabled: true
+    skip: false
+    # running omitted: sshd start is flaky in containers (state allowlisted);
+    # config validity is still enforced by the sshd -t check_cmd on the file.
+
 command:
-  tmout-l2:
+  5.2.x-sshd-hostkeys-present:
+    exec: test -f /etc/ssh/ssh_host_rsa_key
+    exit-status: 0
+    skip: false
+  # login.defs is absent on minimal container images; the states skip there.
+  5.4.1-login-defs-max-days:
+    exec: grep -q '^PASS_MAX_DAYS' /etc/login.defs
+    exit-status: 0
+    skip: {{ .Env.SKIP_KERNEL_CHECKS | default "false" }}
+  5.4.1-login-defs-min-days:
+    exec: grep -q '^PASS_MIN_DAYS' /etc/login.defs
+    exit-status: 0
+    skip: {{ .Env.SKIP_KERNEL_CHECKS | default "false" }}
+  5.4.1-login-defs-warn-age:
+    exec: grep -q '^PASS_WARN_AGE' /etc/login.defs
+    exit-status: 0
+    skip: {{ .Env.SKIP_KERNEL_CHECKS | default "false" }}
+  5.4.x-L2-tmout-600:
     exec: grep -q '^TMOUT=' /etc/profile.d/cis-tmout.sh
     exit-status: 0
     skip: {{ not (eq (.Env.ENABLE_L2 | default "0") "1") }}
-  umask-l2:
+  5.x-L2-umask-027-profile:
     exec: grep -q 'umask 027' /etc/profile
     exit-status: 0
     skip: {{ not (eq (.Env.ENABLE_L2 | default "0") "1") }}
-  ctrlaltdel-l2:
+  5.4.x-L2-mask-ctrlaltdel:
     exec: systemctl is-enabled ctrl-alt-del.target | grep -q masked
     exit-status: 0
     skip: {{ not (eq (.Env.ENABLE_L2 | default "0") "1") }}

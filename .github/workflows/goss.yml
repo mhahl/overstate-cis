@@ -103,7 +103,7 @@ jobs:
           docker cp "$GITHUB_WORKSPACE/tests/goss" target:/goss
           if [ "${{ matrix.level }}" = l2 ]; then ENABLE_L2=1; else ENABLE_L2=0; fi
           # goss -g takes one file; loop the per-section files so each reports.
-          docker exec -e ENABLE_L2="$ENABLE_L2" -e SKIP_KERNEL_CHECKS=true target sh -c '
+          docker exec -e ENABLE_L2="$ENABLE_L2" -e SKIP_KERNEL_CHECKS=true -e ENABLE_IPV6_DISABLE=0 target sh -c '
             fail=0
             for f in /goss/*.yaml; do
               echo "=== $f ==="

@@ -1,15 +1,33 @@
+# CIS 6.1.x — file permissions + L2 USB storage blacklist (maintenance.sls).
+# One test per state, named after the control so a failure identifies the
+# control. Package presence (6.1.x-shadow-utils-installed) lives in
+# 0-packages.yaml. World-writable/unowned/SUID scans in audit.sls are
+# report-only by design and leave no enforced artifact, so nothing to assert.
+
 file:
   /etc/passwd:
+    title: 6.1.1-passwd-perms
     exists: true
     mode: "0644"
+    skip: false
+  /etc/group:
+    title: 6.1.1-group-perms
+    exists: true
+    mode: "0644"
+    skip: false
   /etc/shadow:
+    title: 6.1.1-shadow-perms
     exists: true
     mode: "0000"
-  /etc/group:
+    skip: false
+  /etc/gshadow:
+    title: 6.1.1-gshadow-perms
     exists: true
-    mode: "0644"
+    mode: "0000"
+    skip: false
+
 command:
-  usb-blacklist-l2:
+  6.1.x-L2-usb-storage-blacklist:
     exec: grep -q 'install usb-storage /bin/true' /etc/modprobe.d/cis-usb-storage.conf
     exit-status: 0
     skip: {{ not (eq (.Env.ENABLE_L2 | default "0") "1") }}

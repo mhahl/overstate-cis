@@ -1,0 +1,75 @@
+# CIS 0 / 1.2 / 1.6 / 2.x / 3.x / 4.x / 5.x / 6.x — package presence + GPG enforcement.
+# One test per packages.sls state, named after the control it enforces so a
+# failure identifies the control. 0-guard-supported-os-family leaves no
+# artifact (it fails closed on unsupported OS by design); the CI render gate
+# (state.show_sls on every SLS) covers it.
+
+package:
+  selinux-policy-targeted:
+    title: 1.6.1-selinux-policy-installed
+    installed: true
+    skip: false
+  policycoreutils:
+    title: 1.6.x-selinux-core-installed
+    installed: true
+    skip: false
+  postfix:
+    title: 2.3.x-postfix-installed
+    installed: true
+    skip: false
+  firewalld:
+    title: 3.1.x-firewalld-installed
+    installed: true
+    skip: false
+  chrony:
+    title: 3.x-chrony-installed
+    installed: true
+    skip: false
+  rsyslog:
+    title: 4.1.1-rsyslog-installed
+    installed: true
+    skip: false
+  logrotate:
+    title: 4.2.1-logrotate-installed
+    installed: true
+    skip: false
+  audit:
+    title: 4.3.1-auditd-installed
+    installed: true
+    skip: false
+  sudo:
+    title: 5.1.1-sudo-installed
+    installed: true
+    skip: false
+
+command:
+  # RedHat dnf.conf; passes on SUSE where the state is not rendered.
+  1.2.1-dnf-gpgcheck-enforced:
+    exec: sh -c "test -f /etc/dnf/dnf.conf && grep -q '^gpgcheck=1' /etc/dnf/dnf.conf || test ! -f /etc/dnf/dnf.conf"
+    exit-status: 0
+    skip: false
+  # SUSE zypp.conf; passes on RedHat where the state is not rendered.
+  1.2.1-zypp-gpgcheck-enforced:
+    exec: sh -c "test -f /etc/zypp/zypp.conf && grep -q '^gpgcheck = 1' /etc/zypp/zypp.conf || test ! -f /etc/zypp/zypp.conf"
+    exit-status: 0
+    skip: false
+  # openssh-server on RedHat, openssh on SUSE (map.jinja ssh_server_pkg).
+  2.2.x-openssh-server-installed:
+    exec: sh -c "rpm -q openssh-server || rpm -q openssh"
+    exit-status: 0
+    skip: false
+  # libpwquality on RedHat, pam_pwquality on SUSE (map.jinja pwquality_pkg).
+  5.3.x-pwquality-installed:
+    exec: sh -c "rpm -q libpwquality || rpm -q pam_pwquality"
+    exit-status: 0
+    skip: false
+  # shadow-utils on RedHat, shadow on SUSE (map.jinja shadow_pkg).
+  6.1.x-shadow-utils-installed:
+    exec: sh -c "rpm -q shadow-utils || rpm -q shadow"
+    exit-status: 0
+    skip: false
+  # Fedora-only: SUSE sets selinux_python_pkg='' so the state is never rendered.
+  1.6.x-selinux-python-utils-installed:
+    exec: sh -c "grep -qi suse /etc/os-release && exit 0; rpm -q policycoreutils-python-utils"
+    exit-status: 0
+    skip: false

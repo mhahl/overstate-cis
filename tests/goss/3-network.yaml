@@ -1,24 +1,64 @@
+# CIS 3.x — firewalld, sysctl, wireless, IPv6 (network.sls).
+# One test per state, named after the control so a failure identifies the
+# control. Package presence (3.1.x-firewalld-installed) lives in 0-packages.yaml.
+# Live-kernel checks (sysctl values) skip in containers (SKIP_KERNEL_CHECKS).
+
 file:
+  /etc/firewalld/firewalld.conf:
+    title: 3.1.x-firewalld-backend-nftables
+    exists: true
+    contents:
+      - 'FirewallBackend=nftables'
+    skip: false
   /etc/sysctl.d/99-cis.conf:
+    title: 3.2.x-sysctl-cis-params
     exists: true
     contents:
       - 'net.ipv4.tcp_syncookies = 1'
       - 'net.ipv4.conf.all.log_martians = 1'
       - 'net.ipv4.conf.all.rp_filter = 1'
-  /etc/firewalld/firewalld.conf:
-    exists: true
-    contents:
-      - 'FirewallBackend=nftables'
+    skip: false
+
+service:
+  firewalld:
+    title: 3.1.x-firewalld-enabled
+    enabled: true
+    running: true
+    skip: false
+  wpa_supplicant:
+    title: 3.3.x-wireless-masked
+    enabled: false
+    running: false
+    skip: false
+
 command:
-  firewalld-default-zone:
+  3.1.x-firewalld-default-zone:
+    # L1: default zone stays pillar-tunable (public).
     exec: firewall-cmd --get-default-zone
     exit-status: 0
     stdout:
       - public
-    # L1 only: at L2 the zone is drop (see l2-drop-zone). firewall-cmd works in
-    # privileged CI containers; gate is level-awareness, not environment.
     skip: {{ eq (.Env.ENABLE_L2 | default "0") "1" }}
-  l2-drop-zone:
-    exec: firewall-cmd --get-default-zone | grep -q drop
+  3.1.x-firewalld-default-zone-l2:
+    # L2 + firewalld_strict_drop: default zone tightens to drop.
+    exec: firewall-cmd --get-default-zone
     exit-status: 0
+    stdout:
+      - drop
     skip: {{ not (eq (.Env.ENABLE_L2 | default "0") "1") }}
+  3.2.x-sysctl-apply:
+    # Kernel value after sysctl --system (state writes the file above; this
+    # proves it was applied). Live-kernel check: skipped in containers.
+    exec: sysctl -n net.ipv4.tcp_syncookies
+    exit-status: 0
+    stdout:
+      - '1'
+    skip: {{ .Env.SKIP_KERNEL_CHECKS | default "false" }}
+  3.x-ipv6-disable-optin:
+    # Opt-in only: set disable_ipv6: True in pillar and export
+    # ENABLE_IPV6_DISABLE=1 in the goss environment to exercise this state.
+    exec: sysctl -n net.ipv6.conf.all.disable_ipv6
+    exit-status: 0
+    stdout:
+      - '1'
+    skip: {{ not (eq (.Env.ENABLE_IPV6_DISABLE | default "0") "1") }}
